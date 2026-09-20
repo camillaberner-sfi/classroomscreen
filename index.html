@@ -70,6 +70,16 @@ textarea{width:100%;min-height:120px;background:transparent;color:var(--ink);
 #palett button{width:54px;height:40px;padding:0;border-radius:10px;border:2px solid var(--line)}
 #palett button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
 body{background-attachment:fixed;background-size:cover}
+#rubrik{text-align:center;padding:16px 14px 0;font-size:clamp(1.3rem,4vw,2.1rem);font-weight:700}
+#rubrikSkilje{color:var(--muted);margin:0 10px}
+#rubrikGrupp{outline:none;border-bottom:2px dashed transparent}
+#rubrikGrupp:hover,#rubrikGrupp:focus{border-color:var(--line)}
+body[data-larare="on"] header .chip,
+body[data-larare="on"] header button:not(#larare){display:none}
+body[data-larare="on"] #palett{display:none!important}
+body[data-larare="on"] header{opacity:.35;transition:opacity .15s}
+body[data-larare="on"] header:hover{opacity:1}
+body[data-larare="on"] header h1{display:none}
 </style>
 </head>
 <body>
@@ -87,10 +97,17 @@ body{background-attachment:fixed;background-size:cover}
   <button class="chip" data-panel="mal" aria-pressed="true">Lärandemål</button>
   <button class="chip" data-panel="mobil" aria-pressed="true">Mobil</button>
   <span class="spacer"></span>
+  <button id="larare">Lärarläge</button>
   <button id="bakgrund">Bakgrund</button>
   <button id="tema">Mörkt/ljust</button>
   <button id="helskarm">Helskärm</button>
 </header>
+
+<div id="rubrik">
+  <span id="rubrikDag"></span>
+  <span id="rubrikSkilje">·</span>
+  <span id="rubrikGrupp" contenteditable="true" spellcheck="false"></span>
+</div>
 
 <div id="palett" hidden></div>
 
@@ -369,6 +386,20 @@ function visaMobil(){
 }
 $("#mobilVaxla").addEventListener("click",()=>{mobilPa=!mobilPa;spara("mobil",mobilPa?"1":"0");visaMobil();});
 visaMobil();
+
+/* Rubrik: veckodag + gruppnamn */
+$("#rubrikDag").textContent=veckodag[new Date().getDay()][0].toUpperCase()+veckodag[new Date().getDay()].slice(1);
+$("#rubrikGrupp").textContent=las("grupp")||"1C fm";
+$("#rubrikGrupp").addEventListener("input",()=>spara("grupp",$("#rubrikGrupp").textContent));
+
+/* Lärarläge: döljer knapparna, sidan ligger kvar på skärmen/projektorn */
+function satLarare(pa){
+  document.body.dataset.larare=pa?"on":"off";
+  $("#larare").textContent=pa?"Avsluta lärarläge":"Lärarläge";
+  spara("larare",pa?"1":"0");
+}
+$("#larare").addEventListener("click",()=>satLarare(document.body.dataset.larare!=="on"));
+satLarare(las("larare")==="1");
 
 /* Bakgrunder */
 const bakgrunder=[
