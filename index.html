@@ -35,8 +35,14 @@ button:hover{border-color:var(--accent)}
 .spacer{flex:1}
 main{display:grid;gap:14px;padding:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;
-  box-shadow:var(--shadow);display:none;min-width:0}
+  box-shadow:var(--shadow);display:none;min-width:0;position:relative}
 .card.on{display:block}
+.handtag{position:absolute;top:8px;right:10px;cursor:grab;color:var(--muted);
+  font-size:1.1rem;padding:4px 6px;border-radius:6px;user-select:none;touch-action:none}
+.handtag:hover{background:var(--line)}
+.card.dragging{opacity:.4}
+.card.over{outline:2px dashed var(--accent)}
+body[data-larare="on"] .handtag{display:none}
 .card h2{margin:0 0 10px;font-size:.85rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 .big{font-variant-numeric:tabular-nums;font-weight:700;line-height:1;
   font-size:clamp(2.6rem,9vw,4.6rem);text-align:center}
@@ -400,6 +406,48 @@ function satLarare(pa){
 }
 $("#larare").addEventListener("click",()=>satLarare(document.body.dataset.larare!=="on"));
 satLarare(las("larare")==="1");
+
+/* Dra och släpp för att ordna korten */
+const huvud=$("main");
+[...huvud.children].forEach(kort=>{
+  const h=document.createElement("span");
+  h.className="handtag"; h.textContent="⠿"; h.title="Dra för att flytta"; h.draggable=true;
+  kort.appendChild(h);
+});
+let dragKort=null;
+huvud.addEventListener("dragstart",e=>{
+  if(!e.target.classList.contains("handtag"))return;
+  dragKort=e.target.closest(".card");
+  dragKort.classList.add("dragging");
+  e.dataTransfer.effectAllowed="move";
+});
+huvud.addEventListener("dragend",()=>{
+  if(dragKort)dragKort.classList.remove("dragging");
+  $$(".card.over").forEach(c=>c.classList.remove("over"));
+  dragKort=null; sparaOrdning();
+});
+huvud.addEventListener("dragover",e=>{
+  if(!dragKort)return;
+  e.preventDefault();
+  const mal=e.target.closest(".card");
+  $$(".card.over").forEach(c=>c.classList.remove("over"));
+  if(!mal||mal===dragKort)return;
+  mal.classList.add("over");
+});
+huvud.addEventListener("drop",e=>{
+  if(!dragKort)return;
+  e.preventDefault();
+  const mal=e.target.closest(".card");
+  if(!mal||mal===dragKort)return;
+  const rutor=[...huvud.children], efter=rutor.indexOf(mal)>rutor.indexOf(dragKort);
+  mal.insertAdjacentElement(efter?"afterend":"beforebegin",dragKort);
+  mal.classList.remove("over");
+});
+function sparaOrdning(){spara("ordning",[...huvud.children].map(k=>k.id).join(","));}
+(function aterstallOrdning(){
+  const ordning=(las("ordning")||"").split(",").filter(Boolean);
+  ordning.forEach(id=>{const el=$("#"+id); if(el)huvud.appendChild(el);});
+})();
 
 /* Bakgrunder */
 const bakgrunder=[
