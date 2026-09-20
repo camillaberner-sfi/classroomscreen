@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Klassrumsskärm</title>
+<style>
+:root{
+  --bg:#f4f6fa; --panel:#ffffff; --ink:#15202b; --muted:#5d6b7a;
+  --line:#dde3ec; --accent:#2f6fed; --accent-ink:#fff; --shadow:0 2px 10px rgba(20,35,60,.08);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#10151c; --panel:#1a212b; --ink:#eaf0f7; --muted:#9aa8b8;
+    --line:#2a333f; --accent:#5b8dff; --shadow:0 2px 10px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10151c; --panel:#1a212b; --ink:#eaf0f7; --muted:#9aa8b8;
+  --line:#2a333f; --accent:#5b8dff; --shadow:0 2px 10px rgba(0,0,0,.4);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);
+  border-bottom:1px solid var(--line);padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+header h1{font-size:1rem;margin:0 10px 0 0;font-weight:600;letter-spacing:.02em}
+button{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);
+  border-radius:10px;padding:8px 12px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.spacer{flex:1}
+main{display:grid;gap:14px;padding:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;
+  box-shadow:var(--shadow);display:none;min-width:0}
+.card.on{display:block}
+.card h2{margin:0 0 10px;font-size:.85rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.big{font-variant-numeric:tabular-nums;font-weight:700;line-height:1;
+  font-size:clamp(2.6rem,9vw,4.6rem);text-align:center}
+.sub{text-align:center;color:var(--muted);margin-top:8px}
+.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+textarea{width:100%;min-height:120px;background:transparent;color:var(--ink);
+  border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;resize:vertical}
+#draw{font-size:clamp(1.8rem,6vw,3rem);font-weight:700;text-align:center;min-height:1.2em}
+#lage{font-size:clamp(1.4rem,5vw,2.4rem);font-weight:700;text-align:center;min-height:1.3em}
+.lampor{display:flex;gap:16px;justify-content:center}
+.lampa{width:72px;height:72px;border-radius:50%;border:3px solid var(--line);
+  background:var(--line);cursor:pointer;opacity:.28;transition:opacity .15s}
+.lampa.on{opacity:1}
+.r{background:#e4494b}.g{background:#e9b23c}.b{background:#42a862}
+#timerWrap.klar .big{color:#e4494b}
+.matare{height:40px;background:var(--line);border-radius:10px;overflow:hidden}
+#ljudStapel{height:100%;width:0%;background:#42a862;transition:width .1s,background .2s}
+#ljudStapel.hog{background:#e4494b}
+#ljud.larm{outline:3px solid #e4494b}
+#gruppResultat{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin:12px 0}
+.grp{border:1px solid var(--line);border-radius:12px;padding:10px}
+.grp b{display:block;color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+#planeringLista{margin:0 0 12px;padding-left:1.4em;font-size:1.15rem}
+#planeringLista li{cursor:pointer;padding:3px 0}
+#planeringLista li.klar{text-decoration:line-through;color:var(--muted)}
+#malText{font-size:clamp(1.3rem,4vw,2rem);font-weight:600;line-height:1.3;
+  border:1px dashed var(--line);border-radius:10px;padding:12px;min-height:2em;outline:none}
+#mobilSymbol{font-size:clamp(3rem,12vw,6rem);text-align:center;line-height:1.1}
+#mobilText{font-size:1.2rem;font-weight:600;color:var(--ink)}
+#palett{display:flex;gap:10px;flex-wrap:wrap;padding:12px 14px 0}
+#palett button{width:54px;height:40px;padding:0;border-radius:10px;border:2px solid var(--line)}
+#palett button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+body{background-attachment:fixed;background-size:cover}
+</style>
+</head>
+<body>
+<header>
+  <h1>Klassrumsskärm</h1>
+  <button class="chip" data-panel="klocka" aria-pressed="true">Klocka</button>
+  <button class="chip" data-panel="timer" aria-pressed="true">Timer</button>
+  <button class="chip" data-panel="slump" aria-pressed="true">Slumpa namn</button>
+  <button class="chip" data-panel="arbete" aria-pressed="true">Arbetsläge</button>
+  <button class="chip" data-panel="ljus" aria-pressed="false">Trafikljus</button>
+  <button class="chip" data-panel="anteckning" aria-pressed="false">Anteckningar</button>
+  <button class="chip" data-panel="ljud" aria-pressed="false">Ljudnivå</button>
+  <button class="chip" data-panel="grupp" aria-pressed="false">Gruppindelare</button>
+  <button class="chip" data-panel="planering" aria-pressed="true">Dagens planering</button>
+  <button class="chip" data-panel="mal" aria-pressed="true">Lärandemål</button>
+  <button class="chip" data-panel="mobil" aria-pressed="true">Mobil</button>
+  <span class="spacer"></span>
+  <button id="bakgrund">Bakgrund</button>
+  <button id="tema">Mörkt/ljust</button>
+  <button id="helskarm">Helskärm</button>
+</header>
+
+<div id="palett" hidden></div>
+
+<main>
+  <section class="card on" id="klocka">
+    <h2>Klocka</h2>
+    <div class="big" id="klockaTid">--:--</div>
+    <div class="sub" id="klockaDatum"></div>
+  </section>
+
+  <section class="card on" id="timer">
+    <h2>Timer</h2>
+    <div id="timerWrap"><div class="big" id="timerTid">05:00</div></div>
+    <div class="row">
+      <button data-min="1">1 min</button>
+      <button data-min="5">5 min</button>
+      <button data-min="10">10 min</button>
+      <button data-min="15">15 min</button>
+      <button data-min="20">20 min</button>
+    </div>
+    <div class="row">
+      <button id="timerStart">Starta</button>
+      <button id="timerNoll">Nollställ</button>
+    </div>
+  </section>
+
+  <section class="card on" id="slump">
+    <h2>Slumpa namn</h2>
+    <div id="draw">–</div>
+    <div class="row">
+      <button id="dra">Dra en elev</button>
+      <button id="aterstall">Återställ listan</button>
+    </div>
+    <div class="sub" id="kvar"></div>
+    <textarea id="namnlista" placeholder="Ett namn per rad"></textarea>
+  </section>
+
+  <section class="card on" id="arbete">
+    <h2>Arbetsläge</h2>
+    <div id="lage">Välj arbetsläge</div>
+    <div class="row">
+      <button data-lage="🤫 Tyst arbete">Tyst</button>
+      <button data-lage="🗣️ Viskavolym">Viska</button>
+      <button data-lage="👥 Samarbeta i par">Par</button>
+      <button data-lage="✋ Fråga tre – sen mig">Fråga tre</button>
+      <button data-lage="🎧 Eget arbete med hörlurar">Hörlurar</button>
+    </div>
+  </section>
+
+  <section class="card" id="ljus">
+    <h2>Trafikljus</h2>
+    <div class="lampor">
+      <button class="lampa r" data-ljus="r" aria-label="Rött"></button>
+      <button class="lampa g" data-ljus="g" aria-label="Gult"></button>
+      <button class="lampa b" data-ljus="b" aria-label="Grönt"></button>
+    </div>
+  </section>
+
+  <section class="card" id="anteckning">
+    <h2>Anteckningar</h2>
+    <textarea id="anteckningText" placeholder="Dagens uppgift, läxa, mål …"></textarea>
+  </section>
+
+  <section class="card" id="ljud">
+    <h2>Ljudnivå</h2>
+    <div id="ljudStatus" class="sub" style="margin:0 0 10px">Mikrofonen är avstängd</div>
+    <div class="matare"><div id="ljudStapel"></div></div>
+    <div class="sub" id="ljudText">–</div>
+    <div class="row">
+      <button id="ljudStart">Starta mätning</button>
+      <button id="ljudStopp">Stoppa</button>
+    </div>
+    <div class="row">
+      <label class="sub">Gräns <input type="range" id="ljudGrans" min="10" max="90" value="45"></label>
+    </div>
+  </section>
+
+  <section class="card" id="grupp">
+    <h2>Gruppindelare</h2>
+    <div class="row">
+      <label class="sub">Antal <input type="number" id="gruppAntal" min="2" max="12" value="4" style="width:60px"></label>
+      <button id="gruppTyp" data-typ="grupper">Antal grupper</button>
+      <button id="gruppDela">Dela in</button>
+    </div>
+    <div id="gruppResultat"></div>
+    <div class="sub">Använder namnlistan från ”Slumpa namn”.</div>
+  </section>
+
+  <section class="card on" id="planering">
+    <h2>Dagens planering</h2>
+    <ol id="planeringLista"></ol>
+    <textarea id="planeringText" placeholder="En punkt per rad, t.ex.&#10;Genomgång bråk&#10;Par: uppgift 12–18&#10;Exit ticket"></textarea>
+    <div class="sub">Klicka på en punkt för att bocka av den.</div>
+  </section>
+
+  <section class="card on" id="mal">
+    <h2>Aktuellt lärandemål</h2>
+    <div id="malText" contenteditable="true" spellcheck="false"></div>
+  </section>
+
+  <section class="card on" id="mobil">
+    <h2>Mobiltelefon</h2>
+    <div id="mobilSymbol">📵</div>
+    <div id="mobilText" class="sub"></div>
+    <div class="row"><button id="mobilVaxla">Växla</button></div>
+  </section>
+</main>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const spara=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+const las=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+
+/* Paneler */
+$$(".chip").forEach(b=>{
+  const id=b.dataset.panel, sparat=las("panel:"+id);
+  if(sparat!==null){b.setAttribute("aria-pressed",sparat);$("#"+id).classList.toggle("on",sparat==="true");}
+  b.addEventListener("click",()=>{
+    const pa=b.getAttribute("aria-pressed")!=="true";
+    b.setAttribute("aria-pressed",pa); $("#"+id).classList.toggle("on",pa); spara("panel:"+id,pa);
+  });
+});
+
+/* Tema */
+const temaSparat=las("tema"); if(temaSparat) document.documentElement.dataset.theme=temaSparat;
+$("#tema").addEventListener("click",()=>{
+  const nytt=document.documentElement.dataset.theme==="dark"?"light":"dark";
+  document.documentElement.dataset.theme=nytt; spara("tema",nytt);
+});
+$("#helskarm").addEventListener("click",()=>{
+  document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
+});
+
+/* Klocka */
+const veckodag=["söndag","måndag","tisdag","onsdag","torsdag","fredag","lördag"];
+setInterval(()=>{
+  const d=new Date();
+  $("#klockaTid").textContent=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+  $("#klockaDatum").textContent=veckodag[d.getDay()]+" "+d.toLocaleDateString("sv-SE");
+},1000);
+
+/* Timer */
+let kvarSek=300, tickare=null;
+const visaTimer=()=>$("#timerTid").textContent=
+  String(Math.floor(kvarSek/60)).padStart(2,"0")+":"+String(kvarSek%60).padStart(2,"0");
+function pling(){
+  try{const a=new (window.AudioContext||window.webkitAudioContext)();
+    const o=a.createOscillator(),g=a.createGain();
+    o.frequency.value=880;o.connect(g);g.connect(a.destination);
+    g.gain.setValueAtTime(.25,a.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,a.currentTime+1.2);
+    o.start();o.stop(a.currentTime+1.2);}catch(e){}
+}
+function stoppa(){clearInterval(tickare);tickare=null;$("#timerStart").textContent="Starta";}
+$("#timerStart").addEventListener("click",()=>{
+  if(tickare){stoppa();return;}
+  if(kvarSek<=0)return;
+  $("#timerWrap").classList.remove("klar");
+  $("#timerStart").textContent="Pausa";
+  tickare=setInterval(()=>{
+    kvarSek--; visaTimer();
+    if(kvarSek<=0){stoppa();pling();$("#timerWrap").classList.add("klar");}
+  },1000);
+});
+$("#timerNoll").addEventListener("click",()=>{stoppa();kvarSek=300;$("#timerWrap").classList.remove("klar");visaTimer();});
+$$("#timer [data-min]").forEach(b=>b.addEventListener("click",()=>{
+  stoppa();kvarSek=+b.dataset.min*60;$("#timerWrap").classList.remove("klar");visaTimer();
+}));
+visaTimer();
+
+/* Slumpa namn */
+let kvarNamn=[];
+const namn=()=>$("#namnlista").value.split("\n").map(s=>s.trim()).filter(Boolean);
+const visaKvar=()=>$("#kvar").textContent=kvarNamn.length?kvarNamn.length+" kvar i omgången":"";
+$("#namnlista").value=las("namn")||"";
+$("#namnlista").addEventListener("input",()=>{spara("namn",$("#namnlista").value);kvarNamn=[];visaKvar();});
+$("#dra").addEventListener("click",()=>{
+  if(!kvarNamn.length)kvarNamn=namn();
+  if(!kvarNamn.length){$("#draw").textContent="Lägg till namn först";return;}
+  const i=Math.floor(Math.random()*kvarNamn.length);
+  $("#draw").textContent=kvarNamn.splice(i,1)[0]; visaKvar();
+});
+$("#aterstall").addEventListener("click",()=>{kvarNamn=namn();$("#draw").textContent="–";visaKvar();});
+
+/* Arbetsläge */
+$$("#arbete [data-lage]").forEach(b=>b.addEventListener("click",()=>$("#lage").textContent=b.dataset.lage));
+
+/* Trafikljus */
+$$(".lampa").forEach(l=>l.addEventListener("click",()=>{
+  $$(".lampa").forEach(x=>x.classList.remove("on")); l.classList.add("on");
+}));
+
+/* Ljudnivåmätare */
+let ljudCtx=null,ljudStrom=null,ljudLoop=null;
+$("#ljudStart").addEventListener("click",async()=>{
+  if(ljudLoop)return;
+  try{
+    ljudStrom=await navigator.mediaDevices.getUserMedia({audio:true});
+    ljudCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const analys=ljudCtx.createAnalyser(); analys.fftSize=1024;
+    ljudCtx.createMediaStreamSource(ljudStrom).connect(analys);
+    const data=new Uint8Array(analys.fftSize);
+    $("#ljudStatus").textContent="Mikrofonen lyssnar";
+    let niva=0;
+    const tick=()=>{
+      analys.getByteTimeDomainData(data);
+      let sum=0; for(const v of data){const d=(v-128)/128; sum+=d*d;}
+      const ny=Math.min(100,Math.sqrt(sum/data.length)*260);
+      niva=niva*.75+ny*.25;
+      const grans=+$("#ljudGrans").value, hog=niva>grans;
+      $("#ljudStapel").style.width=niva.toFixed(0)+"%";
+      $("#ljudStapel").classList.toggle("hog",hog);
+      $("#ljud").classList.toggle("larm",hog);
+      $("#ljudText").textContent=hog?"För högt – sänk volymen":"Bra ljudnivå";
+      ljudLoop=requestAnimationFrame(tick);
+    };
+    tick();
+  }catch(e){$("#ljudStatus").textContent="Kunde inte nå mikrofonen. Tillåt mikrofon i webbläsaren.";}
+});
+$("#ljudStopp").addEventListener("click",()=>{
+  if(ljudLoop){cancelAnimationFrame(ljudLoop);ljudLoop=null;}
+  if(ljudStrom){ljudStrom.getTracks().forEach(t=>t.stop());ljudStrom=null;}
+  if(ljudCtx){ljudCtx.close();ljudCtx=null;}
+  $("#ljudStapel").style.width="0%"; $("#ljud").classList.remove("larm");
+  $("#ljudStatus").textContent="Mikrofonen är avstängd"; $("#ljudText").textContent="–";
+});
+
+/* Gruppindelare */
+$("#gruppTyp").addEventListener("click",b=>{
+  const k=$("#gruppTyp"), nytt=k.dataset.typ==="grupper"?"storlek":"grupper";
+  k.dataset.typ=nytt; k.textContent=nytt==="grupper"?"Antal grupper":"Elever per grupp";
+});
+$("#gruppDela").addEventListener("click",()=>{
+  const lista=namn().sort(()=>Math.random()-.5), n=+$("#gruppAntal").value;
+  const ut=$("#gruppResultat"); ut.innerHTML="";
+  if(!lista.length){ut.textContent="Lägg till namn i ”Slumpa namn” först.";return;}
+  const antal=$("#gruppTyp").dataset.typ==="grupper"?n:Math.ceil(lista.length/n);
+  const grupper=Array.from({length:antal},()=>[]);
+  lista.forEach((el,i)=>grupper[i%antal].push(el));
+  grupper.forEach((g,i)=>{
+    const d=document.createElement("div"); d.className="grp";
+    d.innerHTML="<b>Grupp "+(i+1)+"</b>"+g.map(x=>x.replace(/[<>&]/g,"")).join("<br>");
+    ut.appendChild(d);
+  });
+});
+
+/* Dagens planering */
+const klaraRader=new Set();
+function ritaPlanering(){
+  const ul=$("#planeringLista"); ul.innerHTML="";
+  $("#planeringText").value.split("\n").map(s=>s.trim()).filter(Boolean).forEach((rad,i)=>{
+    const li=document.createElement("li"); li.textContent=rad;
+    if(klaraRader.has(i))li.classList.add("klar");
+    li.addEventListener("click",()=>{
+      klaraRader.has(i)?klaraRader.delete(i):klaraRader.add(i);
+      li.classList.toggle("klar");
+    });
+    ul.appendChild(li);
+  });
+}
+$("#planeringText").value=las("planering")||"";
+$("#planeringText").addEventListener("input",()=>{
+  spara("planering",$("#planeringText").value); klaraRader.clear(); ritaPlanering();
+});
+ritaPlanering();
+
+/* Lärandemål */
+$("#malText").textContent=las("mal")||"Skriv dagens lärandemål här …";
+$("#malText").addEventListener("input",()=>spara("mal",$("#malText").textContent));
+
+/* Mobil */
+let mobilPa=las("mobil")==="1";
+function visaMobil(){
+  $("#mobilSymbol").textContent=mobilPa?"📱":"📵";
+  $("#mobilText").textContent=mobilPa?"Mobilen får användas i arbetet":"Mobilen ligger i fickan eller i lådan";
+}
+$("#mobilVaxla").addEventListener("click",()=>{mobilPa=!mobilPa;spara("mobil",mobilPa?"1":"0");visaMobil();});
+visaMobil();
+
+/* Bakgrunder */
+const bakgrunder=[
+  {n:"Standard ljus",b:"",m:false},
+  {n:"Mörk",b:"",m:true},
+  {n:"Krita",b:"#1f3a34",m:true},
+  {n:"Djupblå",b:"linear-gradient(160deg,#16305e,#0b1b36)",m:true},
+  {n:"Soluppgång",b:"linear-gradient(160deg,#ffd9a0,#ffb3b3)",m:false},
+  {n:"Mynta",b:"linear-gradient(160deg,#d7f5e6,#bfe6f2)",m:false},
+  {n:"Lavendel",b:"linear-gradient(160deg,#e4dcfb,#f6dcee)",m:false},
+  {n:"Skiffer",b:"linear-gradient(160deg,#2b3340,#161b23)",m:true},
+  {n:"Sand",b:"#f0e6d4",m:false}
+];
+const palett=$("#palett");
+bakgrunder.forEach((bg,i)=>{
+  const b=document.createElement("button");
+  b.title=bg.n; b.setAttribute("aria-label",bg.n);
+  b.style.background=bg.b||(bg.m?"#10151c":"#f4f6fa");
+  b.addEventListener("click",()=>{valjBakgrund(i);spara("bakgrund",i);});
+  palett.appendChild(b);
+});
+function valjBakgrund(i){
+  const bg=bakgrunder[i]||bakgrunder[0];
+  document.documentElement.dataset.theme=bg.m?"dark":"light";
+  document.body.style.background=bg.b||"";
+  [...palett.children].forEach((b,j)=>b.setAttribute("aria-pressed",j===i));
+}
+$("#bakgrund").addEventListener("click",()=>palett.hidden=!palett.hidden);
+valjBakgrund(+(las("bakgrund")||0));
+
+/* Anteckningar */
+$("#anteckningText").value=las("anteckning")||"";
+$("#anteckningText").addEventListener("input",()=>spara("anteckning",$("#anteckningText").value));
+</script>
+</body>
+</html>
