@@ -55,6 +55,8 @@ textarea{width:100%;min-height:120px;background:transparent;color:var(--ink);
   border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;resize:vertical}
 #planeringText{display:none}
 #planeringText.visa{display:block;margin-top:10px}
+#namnlista{display:none}
+#namnlista.visa{display:block;margin-top:10px}
 #draw{font-size:clamp(1.8rem,6vw,3rem);font-weight:700;text-align:center;min-height:1.2em}
 #lage{font-size:clamp(1.4rem,5vw,2.4rem);font-weight:700;text-align:center;min-height:1.3em}
 .lampor{display:flex;gap:16px;justify-content:center}
@@ -148,12 +150,13 @@ body[data-larare="on"] header h1{display:none}
   <section class="card on" id="slump">
     <h2>Slumpa namn</h2>
     <div id="draw">–</div>
-    <div class="row">
+        <div class="row">
       <button id="dra">Dra en elev</button>
       <button id="aterstall">Återställ listan</button>
     </div>
     <div class="sub" id="kvar"></div>
     <textarea id="namnlista" placeholder="Ett namn per rad"></textarea>
+    <div class="row"><button id="namnRedigera">Redigera namnlista</button></div>
   </section>
 
   <section class="card on" id="arbete">
@@ -296,6 +299,11 @@ const namn=()=>$("#namnlista").value.split("\n").map(s=>s.trim()).filter(Boolean
 const visaKvar=()=>$("#kvar").textContent=kvarNamn.length?kvarNamn.length+" kvar i omgången":"";
 $("#namnlista").value=las("namn")||"";
 $("#namnlista").addEventListener("input",()=>{spara("namn",$("#namnlista").value);kvarNamn=[];visaKvar();});
+  $("#namnRedigera").addEventListener("click",()=>{
+  const visas=$("#namnlista").classList.toggle("visa");
+  $("#namnRedigera").textContent=visas?"Klar":"Redigera namnlista";
+  if(visas)$("#namnlista").focus();
+});
 $("#dra").addEventListener("click",()=>{
   if(!kvarNamn.length)kvarNamn=namn();
   if(!kvarNamn.length){$("#draw").textContent="Lägg till namn först";return;}
